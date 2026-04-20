@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="32" fill="#0a0a1a"/>
+  <!-- 4×4 mini grid, 36px cells, 4px gap, centred at (96,96) -->
+  <!-- grid total: 4*36 + 3*4 = 156, offset = (192-156)/2 = 18 -->
+
+  <!-- row 0 -->
+  <rect x="18"  y="18"  width="36" height="36" rx="6" fill="#c0152f"/>
+  <rect x="58"  y="18"  width="36" height="36" rx="6" fill="#c0152f"/>
+  <rect x="98"  y="18"  width="36" height="36" rx="6" fill="#c0152f"/>
+  <rect x="138" y="18"  width="36" height="36" rx="6" fill="#1a1a2e"/>
+
+  <!-- row 1 -->
+  <rect x="18"  y="58"  width="36" height="36" rx="6" fill="#1a1a2e"/>
+  <rect x="58"  y="58"  width="36" height="36" rx="6" fill="#8b3fc8"/>
+  <rect x="98"  y="58"  width="36" height="36" rx="6" fill="#8b3fc8"/>
+  <rect x="138" y="58"  width="36" height="36" rx="6" fill="#2457c5"/>
+
+  <!-- row 2 -->
+  <rect x="18"  y="98"  width="36" height="36" rx="6" fill="#1db85c"/>
+  <rect x="58"  y="98"  width="36" height="36" rx="6" fill="#8b3fc8"/>
+  <rect x="98"  y="98"  width="36" height="36" rx="6" fill="#1a1a2e"/>
+  <rect x="138" y="98"  width="36" height="36" rx="6" fill="#2457c5"/>
+
+  <!-- row 3 -->
+  <rect x="18"  y="138" width="36" height="36" rx="6" fill="#1db85c"/>
+  <rect x="58"  y="138" width="36" height="36" rx="6" fill="#d4820a"/>
+  <rect x="98"  y="138" width="36" height="36" rx="6" fill="#d4820a"/>
+  <rect x="138" y="138" width="36" height="36" rx="6" fill="#2457c5"/>
+</svg>
