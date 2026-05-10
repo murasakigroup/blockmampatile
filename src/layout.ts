@@ -27,6 +27,7 @@ export interface Layout {
   menuPowerUpBtn:  MenuButton;
   menuSize8Btn:    MenuButton;
   menuSize10Btn:   MenuButton;
+  menuLogsBtn:     MenuButton;
   goRetryBtn:      MenuButton;
   goMenuBtn:       MenuButton;
 }
@@ -72,6 +73,16 @@ export function computeLayout(w: number, h: number, gridSize = 8): Layout {
   const menuSize8Btn:  MenuButton = { x: pillBaseX,              y: pillY, width: pillW, height: pillH };
   const menuSize10Btn: MenuButton = { x: pillBaseX + pillW + pillGap, y: pillY, width: pillW, height: pillH };
 
+  // Logs button: small text-style button centred below the size pills
+  const logsBtnW = 90;
+  const logsBtnH = 26;
+  const menuLogsBtn: MenuButton = {
+    x: Math.floor((w - logsBtnW) / 2),
+    y: pillY + pillH + 10,
+    width:  logsBtnW,
+    height: logsBtnH,
+  };
+
   // Game-over buttons: two stacked, centred
   const goBtnW   = Math.min(220, w - MARGIN * 4);
   const goBtnH   = 48;
@@ -87,6 +98,7 @@ export function computeLayout(w: number, h: number, gridSize = 8): Layout {
     exitBtnX, exitBtnY, exitBtnSize,
     menuClassicBtn, menuPowerUpBtn,
     menuSize8Btn, menuSize10Btn,
+    menuLogsBtn,
     goRetryBtn, goMenuBtn,
   };
 }

@@ -2,6 +2,7 @@
 import { Grid, createGrid } from './grid.js';
 import { PieceDefinition } from './pieces.js';
 import { newTray } from './tray.js';
+import { Recorder } from './recorder.js';
 
 export const enum Phase {
   MENU,
@@ -31,6 +32,8 @@ export interface GameState {
   clearingCells:     [number, number][];
   clearTimer:        number;   // seconds remaining in clear animation
   pendingSpawnLines: number;   // line count for powerup spawn after clear animation (0 = none)
+  recorder:          Recorder | null;
+  showLogs:          boolean;
 }
 
 export function bestKey(mode: GameMode, size: number): string {
@@ -72,11 +75,15 @@ export function createInitialState(): GameState {
     clearingCells:     [],
     clearTimer:        0,
     pendingSpawnLines: 0,
+    recorder:          null,
+    showLogs:          false,
   };
 }
 
 /** Go back to the main menu. */
 export function resetToMenu(state: GameState): void {
+  state.recorder?.flush();
+  state.recorder          = null;
   const mode = state.gameMode;
   const stored = parseInt(localStorage.getItem(bestKey(mode, state.gridSize)) ?? '0', 10);
   const best = Number.isFinite(stored) ? stored : 0;
@@ -95,6 +102,8 @@ export function resetToMenu(state: GameState): void {
 
 /** Restart the current mode without leaving it. */
 export function retryState(state: GameState): void {
+  state.recorder?.flush();
+  state.recorder          = null;
   const mode = state.gameMode;
   const stored = parseInt(localStorage.getItem(bestKey(mode, state.gridSize)) ?? '0', 10);
   const best = Number.isFinite(stored) ? stored : 0;
