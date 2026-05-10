@@ -145,8 +145,6 @@ function tryPlace(state: GameState, slotIndex: number, row: number, col: number)
 
     state.clearTimer = CLEAR_DURATION;
     state.phase      = Phase.CLEARING;
-  } else {
-    afterClear(state);
   }
 
   // Update best
@@ -155,7 +153,7 @@ function tryPlace(state: GameState, slotIndex: number, row: number, col: number)
     saveBest(state);
   }
 
-  // Telemetry
+  // Telemetry — emitted before afterClear so recorder is never null when we write these
   state.recorder?.event('place', {
     slot: slotIndex, piece: piece.name,
     anchor: [row, col], score_after: state.score,
@@ -164,6 +162,10 @@ function tryPlace(state: GameState, slotIndex: number, row: number, col: number)
     rows: fullRows, cols: fullCols, cells: lineCells.length,
     score_after: state.score,
   });
+
+  if (lineCount === 0) {
+    afterClear(state);
+  }
 
   return 'placed';
 }
