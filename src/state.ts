@@ -33,18 +33,31 @@ export interface GameState {
   pendingSpawnLines: number;   // line count for powerup spawn after clear animation (0 = none)
 }
 
-function bestKey(mode: GameMode): string {
-  return mode === 'classic' ? 'bm-best-classic' : 'bm-best-powerup';
+export function bestKey(mode: GameMode, size: number): string {
+  return `bm-best-${mode}-${size}`;
+}
+
+function migrateBestKeys(): void {
+  for (const mode of ['classic', 'powerup'] as const) {
+    const oldKey = `bm-best-${mode}`;
+    const newKey = bestKey(mode, 8);
+    const old = localStorage.getItem(oldKey);
+    if (old !== null && localStorage.getItem(newKey) === null) {
+      localStorage.setItem(newKey, old);
+      localStorage.removeItem(oldKey);
+    }
+  }
 }
 
 export function saveBest(state: GameState): void {
-  localStorage.setItem(bestKey(state.gameMode), String(state.best));
+  localStorage.setItem(bestKey(state.gameMode, state.gridSize), String(state.best));
 }
 
 export function createInitialState(): GameState {
-  // Start in MENU; load classic best so score bar shows something meaningful
+  migrateBestKeys();
+  // Start in MENU; load classic-8×8 best so score bar shows something meaningful
   // once the user picks Classic mode.
-  const stored = parseInt(localStorage.getItem('bm-best-classic') ?? '0', 10);
+  const stored = parseInt(localStorage.getItem(bestKey('classic', 8)) ?? '0', 10);
   const best = Number.isFinite(stored) ? stored : 0;
   return {
     phase:             Phase.MENU,
@@ -65,7 +78,7 @@ export function createInitialState(): GameState {
 /** Go back to the main menu. */
 export function resetToMenu(state: GameState): void {
   const mode = state.gameMode;
-  const stored = parseInt(localStorage.getItem(bestKey(mode)) ?? '0', 10);
+  const stored = parseInt(localStorage.getItem(bestKey(mode, state.gridSize)) ?? '0', 10);
   const best = Number.isFinite(stored) ? stored : 0;
   state.phase             = Phase.MENU;
   state.gameMode          = mode;
@@ -83,7 +96,7 @@ export function resetToMenu(state: GameState): void {
 /** Restart the current mode without leaving it. */
 export function retryState(state: GameState): void {
   const mode = state.gameMode;
-  const stored = parseInt(localStorage.getItem(bestKey(mode)) ?? '0', 10);
+  const stored = parseInt(localStorage.getItem(bestKey(mode, state.gridSize)) ?? '0', 10);
   const best = Number.isFinite(stored) ? stored : 0;
   state.phase             = Phase.PLAYING;
   state.gameMode          = mode;

@@ -524,11 +524,37 @@ function drawMenuButton(
   }
 }
 
+function drawSizePill(
+  ctx:      CanvasRenderingContext2D,
+  btn:      MenuButton,
+  label:    string,
+  selected: boolean,
+): void {
+  const { x, y, width, height } = btn;
+  const r = height * 0.45;
+
+  roundRect(ctx, x, y, width, height, r);
+  ctx.fillStyle = selected ? '#2a2a5a' : '#141428';
+  ctx.fill();
+
+  roundRect(ctx, x, y, width, height, r);
+  ctx.strokeStyle = selected ? '#7070d0' : '#333358';
+  ctx.lineWidth   = selected ? 1.5 : 1;
+  ctx.stroke();
+
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font         = `bold 14px system-ui, sans-serif`;
+  ctx.fillStyle    = selected ? TEXT_COL : '#55558a';
+  ctx.fillText(label, x + width / 2, y + height / 2);
+}
+
 function drawMenu(
-  ctx: CanvasRenderingContext2D,
-  w: number,
-  h: number,
-  layout: Layout,
+  ctx:      CanvasRenderingContext2D,
+  w:        number,
+  h:        number,
+  layout:   Layout,
+  gridSize: number,
 ): void {
   // Background already filled to BG by renderGame
 
@@ -567,14 +593,24 @@ function drawMenu(
   ctx.fillStyle = TEXT_COL;
   ctx.fillText('Block Mampatile', w / 2, h * 0.28);
 
-  // Subtitle / tagline
+  // Subtitle — reflects selected grid size
   ctx.font      = `16px system-ui, sans-serif`;
   ctx.fillStyle = '#6060a0';
-  ctx.fillText('8 × 8 block puzzle', w / 2, h * 0.28 + Math.max(28, Math.min(48, w * 0.11)) * 0.72);
+  ctx.fillText(`${gridSize} × ${gridSize} block puzzle`, w / 2, h * 0.28 + Math.max(28, Math.min(48, w * 0.11)) * 0.72);
 
   // Mode buttons
   drawMenuButton(ctx, layout.menuClassicBtn, 'Classic',  false);
   drawMenuButton(ctx, layout.menuPowerUpBtn, 'Power-Up', false);
+
+  // Size toggle
+  ctx.textAlign    = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.font         = `13px system-ui, sans-serif`;
+  ctx.fillStyle    = '#55558a';
+  const pillMidY = layout.menuSize8Btn.y + layout.menuSize8Btn.height / 2;
+  ctx.fillText('Size:', layout.menuSize8Btn.x - 8, pillMidY);
+  drawSizePill(ctx, layout.menuSize8Btn,  '8 × 8',   gridSize === 8);
+  drawSizePill(ctx, layout.menuSize10Btn, '10 × 10', gridSize === 10);
 }
 
 // ─── public API ──────────────────────────────────────────────────────────────
@@ -597,7 +633,7 @@ export function renderGame(
   ctx.scale(dpr, dpr);
 
   if (state.phase === Phase.MENU) {
-    drawMenu(ctx, w, h, layout);
+    drawMenu(ctx, w, h, layout, state.gridSize);
   } else {
     drawScoreBar(ctx, w, state.displayScore, state.best, layout);
     drawExitButton(ctx, layout);

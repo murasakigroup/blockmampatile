@@ -1,7 +1,7 @@
 
 import { Grid } from './grid.js';
 import { PieceDefinition, getRandomPiece } from './pieces.js';
-import { GameState, Phase, saveBest, resetToMenu, retryState } from './state.js';
+import { GameState, Phase, saveBest, bestKey, resetToMenu, retryState } from './state.js';
 import { InputBuffer, clearInputBuffer } from './input.js';
 import { Layout, MenuButton } from './layout.js';
 import { spawnPowerup, resolvePowerups } from './powerups.js';
@@ -188,14 +188,31 @@ export function processInput(
       const { x, y } = input.down;
       if (hitTest(layout.menuClassicBtn, x, y)) {
         state.gameMode = 'classic';
-        const stored = parseInt(localStorage.getItem('bm-best-classic') ?? '0', 10);
+        state.grid     = Array.from({ length: state.gridSize }, () => Array(state.gridSize).fill(null));
+        state.tray     = [getRandomPiece(), getRandomPiece(), getRandomPiece()];
+        state.score    = 0;
+        state.displayScore = 0;
+        const stored = parseInt(localStorage.getItem(bestKey('classic', state.gridSize)) ?? '0', 10);
         state.best = Number.isFinite(stored) ? stored : 0;
         state.phase = Phase.PLAYING;
       } else if (hitTest(layout.menuPowerUpBtn, x, y)) {
         state.gameMode = 'powerup';
-        const stored = parseInt(localStorage.getItem('bm-best-powerup') ?? '0', 10);
+        state.gridSize = 8;  // Power-Up is 8×8 only
+        state.grid     = Array.from({ length: 8 }, () => Array(8).fill(null));
+        state.tray     = [getRandomPiece(), getRandomPiece(), getRandomPiece()];
+        state.score    = 0;
+        state.displayScore = 0;
+        const stored = parseInt(localStorage.getItem(bestKey('powerup', 8)) ?? '0', 10);
         state.best = Number.isFinite(stored) ? stored : 0;
         state.phase = Phase.PLAYING;
+      } else if (hitTest(layout.menuSize8Btn, x, y)) {
+        state.gridSize = 8;
+        const stored = parseInt(localStorage.getItem(bestKey('classic', 8)) ?? '0', 10);
+        state.best = Number.isFinite(stored) ? stored : 0;
+      } else if (hitTest(layout.menuSize10Btn, x, y)) {
+        state.gridSize = 10;
+        const stored = parseInt(localStorage.getItem(bestKey('classic', 10)) ?? '0', 10);
+        state.best = Number.isFinite(stored) ? stored : 0;
       }
     }
     clearInputBuffer(input);

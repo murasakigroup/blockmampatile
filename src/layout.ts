@@ -12,21 +12,23 @@ export interface MenuButton {
 }
 
 export interface Layout {
-  cellSize:       number;
-  gridLeft:       number;
-  gridTop:        number;
-  trayTop:        number;
-  trayHeight:     number;
-  restartX:       number;
-  restartY:       number;
-  restartSize:    number;
-  exitBtnX:       number;
-  exitBtnY:       number;
-  exitBtnSize:    number;
-  menuClassicBtn: MenuButton;
-  menuPowerUpBtn: MenuButton;
-  goRetryBtn:     MenuButton;
-  goMenuBtn:      MenuButton;
+  cellSize:        number;
+  gridLeft:        number;
+  gridTop:         number;
+  trayTop:         number;
+  trayHeight:      number;
+  restartX:        number;
+  restartY:        number;
+  restartSize:     number;
+  exitBtnX:        number;
+  exitBtnY:        number;
+  exitBtnSize:     number;
+  menuClassicBtn:  MenuButton;
+  menuPowerUpBtn:  MenuButton;
+  menuSize8Btn:    MenuButton;
+  menuSize10Btn:   MenuButton;
+  goRetryBtn:      MenuButton;
+  goMenuBtn:       MenuButton;
 }
 
 export function computeLayout(w: number, h: number, gridSize = 8): Layout {
@@ -61,6 +63,15 @@ export function computeLayout(w: number, h: number, gridSize = 8): Layout {
   const menuClassicBtn: MenuButton = { x: btnX, y: btnBaseY,                width: btnW, height: btnH };
   const menuPowerUpBtn: MenuButton = { x: btnX, y: btnBaseY + btnH + btnGap, width: btnW, height: btnH };
 
+  // Size toggle pills: ( 8×8 ) ( 10×10 ) below mode buttons
+  const pillW      = 72;
+  const pillH      = 34;
+  const pillGap    = 10;
+  const pillBaseX  = Math.floor((w - (pillW * 2 + pillGap)) / 2);
+  const pillY      = btnBaseY + btnH * 2 + btnGap + 20;
+  const menuSize8Btn:  MenuButton = { x: pillBaseX,              y: pillY, width: pillW, height: pillH };
+  const menuSize10Btn: MenuButton = { x: pillBaseX + pillW + pillGap, y: pillY, width: pillW, height: pillH };
+
   // Game-over buttons: two stacked, centred
   const goBtnW   = Math.min(220, w - MARGIN * 4);
   const goBtnH   = 48;
@@ -75,6 +86,7 @@ export function computeLayout(w: number, h: number, gridSize = 8): Layout {
     restartX, restartY, restartSize,
     exitBtnX, exitBtnY, exitBtnSize,
     menuClassicBtn, menuPowerUpBtn,
+    menuSize8Btn, menuSize10Btn,
     goRetryBtn, goMenuBtn,
   };
 }
