@@ -40,7 +40,7 @@ function main(): void {
     const dpr    = window.devicePixelRatio || 1;
     const w      = canvas.width / dpr;
     const h      = canvas.height / dpr;
-    const layout = computeLayout(w, h);
+    const layout = computeLayout(w, h, state.gridSize);
 
     processInput(state, input, layout, w);
     update(state, dt);

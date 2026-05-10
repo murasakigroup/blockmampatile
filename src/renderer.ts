@@ -302,8 +302,8 @@ function drawGrid(
 ): void {
   const { cellSize, gridLeft, gridTop } = layout;
 
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
+  for (let row = 0; row < grid.length; row++) {
+    for (let col = 0; col < grid[row].length; col++) {
       const px   = gridLeft + col * cellSize;
       const py   = gridTop  + row * cellSize;
       const cell = grid[row][col];
@@ -537,8 +537,8 @@ function drawMenu(
   const { cellSize, gridLeft, gridTop } = layout;
   ctx.save();
   ctx.globalAlpha = 0.22;
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
+  for (let row = 0; row < demoGrid.length; row++) {
+    for (let col = 0; col < demoGrid[row].length; col++) {
       const px   = gridLeft + col * cellSize;
       const py   = gridTop  + row * cellSize;
       const cell = demoGrid[row][col];

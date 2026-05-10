@@ -24,7 +24,8 @@ export function spawnPowerup(
   const kind: PowerupKind = lineCount >= 3 ? 'bomb' : 'rocket';
 
   // Prefer an interior cell so the effect has maximum reach.
-  const interior = clearedCells.filter(([r, c]) => r > 0 && r < 7 && c > 0 && c < 7);
+  const size     = grid.length;
+  const interior = clearedCells.filter(([r, c]) => r > 0 && r < size - 1 && c > 0 && c < size - 1);
   const pool     = interior.length > 0 ? interior : clearedCells;
   const [r, c]   = pool[Math.floor(Math.random() * pool.length)];
 
@@ -47,7 +48,8 @@ export function resolvePowerups(
   grid:  Grid,
   cells: [number, number][],
 ): [number, number][] {
-  const seen = new Set<number>(cells.map(([r, c]) => r * 8 + c));
+  const size = grid.length;
+  const seen = new Set<number>(cells.map(([r, c]) => r * size + c));
   const work = [...cells];
   let i = 0;
 
@@ -58,7 +60,7 @@ export function resolvePowerups(
 
     const extras = effectCells(grid, r, c, cell.powerup);
     for (const [er, ec] of extras) {
-      const key = er * 8 + ec;
+      const key = er * size + ec;
       if (!seen.has(key)) {
         seen.add(key);
         work.push([er, ec]);
@@ -88,8 +90,8 @@ function effectCells(
  *  Since we don't track which axis triggered it, we blast BOTH the full row and column. */
 function rocketCells(grid: Grid, row: number, col: number): [number, number][] {
   const cells: [number, number][] = [];
-  for (let c = 0; c < 8; c++) if (grid[row][c] !== null) cells.push([row, c]);
-  for (let r = 0; r < 8; r++) if (grid[r][col] !== null) cells.push([r, col]);
+  for (let c = 0; c < grid[row].length; c++) if (grid[row][c] !== null) cells.push([row, c]);
+  for (let r = 0; r < grid.length; r++) if (grid[r][col] !== null) cells.push([r, col]);
   return cells;
 }
 
@@ -100,7 +102,7 @@ function bombCells(grid: Grid, row: number, col: number): [number, number][] {
     for (let dc = -1; dc <= 1; dc++) {
       const r = row + dr;
       const c = col + dc;
-      if (r >= 0 && r < 8 && c >= 0 && c < 8 && grid[r][c] !== null) cells.push([r, c]);
+      if (r >= 0 && r < grid.length && c >= 0 && c < grid.length && grid[r][c] !== null) cells.push([r, c]);
     }
   }
   return cells;
@@ -111,8 +113,8 @@ function colourBurstCells(grid: Grid, row: number, col: number): [number, number
   const target = grid[row][col]?.colour;
   if (target == null) return [];
   const cells: [number, number][] = [];
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < grid[r].length; c++) {
       if (grid[r][c]?.colour === target) cells.push([r, c]);
     }
   }

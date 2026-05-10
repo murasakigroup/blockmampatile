@@ -46,7 +46,7 @@ export function canPlace(grid: Grid, piece: PieceDefinition, row: number, col: n
   for (const [dr, dc] of piece.offsets) {
     const r = row + dr;
     const c = col + dc;
-    if (r < 0 || r >= 8 || c < 0 || c >= 8 || grid[r][c] !== null) return false;
+    if (r < 0 || r >= grid.length || c < 0 || c >= grid.length || grid[r][c] !== null) return false;
   }
   return true;
 }
@@ -58,29 +58,30 @@ function placePiece(grid: Grid, piece: PieceDefinition, row: number, col: number
 }
 
 function findFullLines(grid: Grid): { fullRows: number[]; fullCols: number[] } {
+  const size = grid.length;
   const fullRows: number[] = [];
   const fullCols: number[] = [];
-  for (let r = 0; r < 8; r++) {
+  for (let r = 0; r < size; r++) {
     if (grid[r].every(c => c !== null)) fullRows.push(r);
   }
-  for (let c = 0; c < 8; c++) {
+  for (let c = 0; c < size; c++) {
     if (grid.every(row => row[c] !== null)) fullCols.push(c);
   }
   return { fullRows, fullCols };
 }
 
-function collectClearingCells(fullRows: number[], fullCols: number[]): [number, number][] {
+function collectClearingCells(fullRows: number[], fullCols: number[], size: number): [number, number][] {
   const seen  = new Set<number>();
   const cells: [number, number][] = [];
   for (const r of fullRows) {
-    for (let c = 0; c < 8; c++) {
-      const key = r * 8 + c;
+    for (let c = 0; c < size; c++) {
+      const key = r * size + c;
       if (!seen.has(key)) { seen.add(key); cells.push([r, c]); }
     }
   }
   for (const c of fullCols) {
-    for (let r = 0; r < 8; r++) {
-      const key = r * 8 + c;
+    for (let r = 0; r < size; r++) {
+      const key = r * size + c;
       if (!seen.has(key)) { seen.add(key); cells.push([r, c]); }
     }
   }
@@ -92,10 +93,11 @@ function applyClear(grid: Grid, cells: [number, number][]): void {
 }
 
 function anyPieceFits(grid: Grid, tray: (PieceDefinition | null)[]): boolean {
+  const size = grid.length;
   for (const piece of tray) {
     if (piece === null) continue;
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
         if (canPlace(grid, piece, r, c)) return true;
       }
     }
@@ -124,7 +126,7 @@ function tryPlace(state: GameState, slotIndex: number, row: number, col: number)
     // Line score: 18 per line + 10 per extra line in multi-clear
     state.score += lineCount * 18 + Math.max(0, lineCount - 1) * 10;
 
-    const lineCells = collectClearingCells(fullRows, fullCols);
+    const lineCells = collectClearingCells(fullRows, fullCols, state.grid.length);
 
     if (state.gameMode === 'powerup') {
       // Expand clearing set: any powerup cell in the lines fires its effect.

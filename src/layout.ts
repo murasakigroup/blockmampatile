@@ -29,13 +29,13 @@ export interface Layout {
   goMenuBtn:      MenuButton;
 }
 
-export function computeLayout(w: number, h: number): Layout {
+export function computeLayout(w: number, h: number, gridSize = 8): Layout {
   const availW     = w - MARGIN * 2;
   const availH     = h - SCORE_BAR_H - MARGIN * 3;
   const traySlot   = Math.min(h * 0.18, 120);
   const gridSide   = Math.min(availW, availH - traySlot);
-  const cellSize   = Math.max(1, Math.floor(gridSide / 8));
-  const actualGrid = cellSize * 8;
+  const cellSize   = Math.max(1, Math.floor(gridSide / gridSize));
+  const actualGrid = cellSize * gridSize;
   const gridLeft   = Math.floor((w - actualGrid) / 2);
   const gridTop    = SCORE_BAR_H + MARGIN;
   const trayTop    = gridTop + actualGrid + MARGIN;

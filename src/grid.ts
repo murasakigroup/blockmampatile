@@ -8,8 +8,8 @@ export interface Cell {
 
 export type Grid = (Cell | null)[][];
 
-export function createGrid(): Grid {
-  return Array.from({ length: 8 }, () => Array(8).fill(null));
+export function createGrid(size = 8): Grid {
+  return Array.from({ length: size }, () => Array(size).fill(null));
 }
 
 export function createDemoGrid(): Grid {
