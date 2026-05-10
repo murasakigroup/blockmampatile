@@ -21,6 +21,7 @@ export interface DragState {
 export interface GameState {
   phase:             Phase;
   gameMode:          GameMode;
+  gridSize:          number;
   grid:              Grid;
   tray:              (PieceDefinition | null)[];
   score:             number;
@@ -48,7 +49,8 @@ export function createInitialState(): GameState {
   return {
     phase:             Phase.MENU,
     gameMode:          'classic',
-    grid:              createGrid(),
+    gridSize:          8,
+    grid:              createGrid(8),
     tray:              newTray(),
     score:             0,
     displayScore:      0,
@@ -67,7 +69,7 @@ export function resetToMenu(state: GameState): void {
   const best = Number.isFinite(stored) ? stored : 0;
   state.phase             = Phase.MENU;
   state.gameMode          = mode;
-  state.grid              = createGrid();
+  state.grid              = createGrid(state.gridSize);
   state.tray              = newTray();
   state.score             = 0;
   state.displayScore      = 0;
@@ -85,7 +87,7 @@ export function retryState(state: GameState): void {
   const best = Number.isFinite(stored) ? stored : 0;
   state.phase             = Phase.PLAYING;
   state.gameMode          = mode;
-  state.grid              = createGrid();
+  state.grid              = createGrid(state.gridSize);
   state.tray              = newTray();
   state.score             = 0;
   state.displayScore      = 0;
