@@ -611,6 +611,14 @@ function drawMenu(
   ctx.fillText('Size:', layout.menuSize8Btn.x - 8, pillMidY);
   drawSizePill(ctx, layout.menuSize8Btn,  '8 × 8',   gridSize === 8);
   drawSizePill(ctx, layout.menuSize10Btn, '10 × 10', gridSize === 10);
+
+  // Logs link button
+  const { menuLogsBtn } = layout;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font         = `12px system-ui, sans-serif`;
+  ctx.fillStyle    = '#44447a';
+  ctx.fillText('Game Logs', menuLogsBtn.x + menuLogsBtn.width / 2, menuLogsBtn.y + menuLogsBtn.height / 2);
 }
 
 // ─── public API ──────────────────────────────────────────────────────────────

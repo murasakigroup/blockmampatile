@@ -15,11 +15,11 @@ import { Grid, PowerupKind } from './grid.js';
  *   (ColourBurst is reserved for future special combos)
  */
 export function spawnPowerup(
-  grid:       Grid,
+  grid:         Grid,
   clearedCells: [number, number][],
-  lineCount:  number,
-): void {
-  if (lineCount < 2 || clearedCells.length === 0) return;
+  lineCount:    number,
+): { at: [number, number]; kind: PowerupKind } | null {
+  if (lineCount < 2 || clearedCells.length === 0) return null;
 
   const kind: PowerupKind = lineCount >= 3 ? 'bomb' : 'rocket';
 
@@ -32,6 +32,7 @@ export function spawnPowerup(
   // The cell was just cleared so it's null — stamp the powerup as a dim
   // marker cell (dark neutral colour so the icon reads clearly).
   grid[r][c] = { colour: '#1e1e3a', powerup: kind };
+  return { at: [r, c], kind };
 }
 
 // ─── trigger ──────────────────────────────────────────────────────────────────

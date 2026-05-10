@@ -5,6 +5,7 @@ import { GameState, Phase, saveBest, bestKey, resetToMenu, retryState } from './
 import { InputBuffer, clearInputBuffer } from './input.js';
 import { Layout, MenuButton } from './layout.js';
 import { spawnPowerup, resolvePowerups } from './powerups.js';
+import { createRecorder } from './recorder.js';
 
 export const CLEAR_DURATION = 0.3; // seconds
 
@@ -107,10 +108,12 @@ function anyPieceFits(grid: Grid, tray: (PieceDefinition | null)[]): boolean {
 
 // ─── placement action ────────────────────────────────────────────────────────
 
-function tryPlace(state: GameState, slotIndex: number, row: number, col: number): void {
+type PlaceResult = 'placed' | 'invalid_position' | 'no_piece';
+
+function tryPlace(state: GameState, slotIndex: number, row: number, col: number): PlaceResult {
   const piece = state.tray[slotIndex];
-  if (piece === null) return;
-  if (!canPlace(state.grid, piece, row, col)) return;
+  if (piece === null) return 'no_piece';
+  if (!canPlace(state.grid, piece, row, col)) return 'invalid_position';
 
   placePiece(state.grid, piece, row, col);
   state.tray[slotIndex] = null;
@@ -120,13 +123,13 @@ function tryPlace(state: GameState, slotIndex: number, row: number, col: number)
 
   // Check for full lines
   const { fullRows, fullCols } = findFullLines(state.grid);
-  const lineCount = fullRows.length + fullCols.length;
+  const lineCount  = fullRows.length + fullCols.length;
+  const lineCells  = lineCount > 0
+    ? collectClearingCells(fullRows, fullCols, state.grid.length) : [];
 
   if (lineCount > 0) {
     // Line score: 18 per line + 10 per extra line in multi-clear
     state.score += lineCount * 18 + Math.max(0, lineCount - 1) * 10;
-
-    const lineCells = collectClearingCells(fullRows, fullCols, state.grid.length);
 
     if (state.gameMode === 'powerup') {
       // Expand clearing set: any powerup cell in the lines fires its effect.
@@ -151,17 +154,32 @@ function tryPlace(state: GameState, slotIndex: number, row: number, col: number)
     state.best = state.score;
     saveBest(state);
   }
+
+  // Telemetry
+  state.recorder?.event('place', {
+    slot: slotIndex, piece: piece.name,
+    anchor: [row, col], score_after: state.score,
+  });
+  state.recorder?.event('lines_cleared', {
+    rows: fullRows, cols: fullCols, cells: lineCells.length,
+    score_after: state.score,
+  });
+
+  return 'placed';
 }
 
 function afterClear(state: GameState): void {
   // Refill tray once all 3 slots are empty
   if (state.tray.every(p => p === null)) {
     state.tray = [getRandomPiece(), getRandomPiece(), getRandomPiece()];
+    state.recorder?.event('tray_refill', { pieces: state.tray.map(p => p!.name) });
   }
 
   // Game over: no remaining piece fits anywhere
   if (!anyPieceFits(state.grid, state.tray)) {
     state.phase = Phase.GAME_OVER;
+    state.recorder?.finish(state.score, state.best);
+    state.recorder = null;
   } else {
     state.phase = Phase.PLAYING;
   }
@@ -194,6 +212,8 @@ export function processInput(
         state.displayScore = 0;
         const stored = parseInt(localStorage.getItem(bestKey('classic', state.gridSize)) ?? '0', 10);
         state.best = Number.isFinite(stored) ? stored : 0;
+        state.recorder = createRecorder('classic', state.gridSize);
+        state.recorder.event('tray_refill', { pieces: state.tray.map(p => p!.name) });
         state.phase = Phase.PLAYING;
       } else if (hitTest(layout.menuPowerUpBtn, x, y)) {
         state.gameMode = 'powerup';
@@ -204,6 +224,8 @@ export function processInput(
         state.displayScore = 0;
         const stored = parseInt(localStorage.getItem(bestKey('powerup', 8)) ?? '0', 10);
         state.best = Number.isFinite(stored) ? stored : 0;
+        state.recorder = createRecorder('powerup', 8);
+        state.recorder.event('tray_refill', { pieces: state.tray.map(p => p!.name) });
         state.phase = Phase.PLAYING;
       } else if (hitTest(layout.menuSize8Btn, x, y)) {
         state.gridSize = 8;
@@ -213,6 +235,8 @@ export function processInput(
         state.gridSize = 10;
         const stored = parseInt(localStorage.getItem(bestKey('classic', 10)) ?? '0', 10);
         state.best = Number.isFinite(stored) ? stored : 0;
+      } else if (hitTest(layout.menuLogsBtn, x, y)) {
+        state.showLogs = true;
       }
     }
     clearInputBuffer(input);
@@ -269,6 +293,7 @@ export function processInput(
       const slotIndex = Math.min(2, Math.max(0, Math.floor(x / slotW)));
       if (state.tray[slotIndex] !== null) {
         state.drag = { slotIndex, pointerX: x, pointerY: y };
+        state.recorder?.event('drag_start', { slot: slotIndex });
       }
     }
   }
@@ -280,6 +305,7 @@ export function processInput(
 
   // --- drag cancel ---
   if (input.cancel && state.drag) {
+    state.recorder?.event('drag_cancel', { slot: state.drag.slotIndex });
     state.drag = null;
   }
 
@@ -296,7 +322,10 @@ export function processInput(
         pointerX, pointerY, piece,
         layout.cellSize, layout.gridLeft, layout.gridTop,
       );
-      tryPlace(state, slotIndex, anchorRow, anchorCol);
+      const result = tryPlace(state, slotIndex, anchorRow, anchorCol);
+      if (result !== 'placed') {
+        state.recorder?.event('drop_rejected', { slot: slotIndex, attempted: [anchorRow, anchorCol] });
+      }
     }
   }
 
@@ -317,7 +346,8 @@ export function update(state: GameState, dt: number): void {
       applyClear(state.grid, justCleared);
       // Spawn a powerup on one of the cleared cells after a multi-clear.
       if (state.pendingSpawnLines >= 2) {
-        spawnPowerup(state.grid, justCleared, state.pendingSpawnLines);
+        const spawn = spawnPowerup(state.grid, justCleared, state.pendingSpawnLines);
+        if (spawn) state.recorder?.event('powerup_spawn', { at: spawn.at, kind: spawn.kind });
         state.pendingSpawnLines = 0;
       }
       state.clearingCells = [];
