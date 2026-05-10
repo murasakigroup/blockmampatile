@@ -28,6 +28,7 @@ export interface Layout {
   menuSize8Btn:    MenuButton;
   menuSize10Btn:   MenuButton;
   menuLogsBtn:     MenuButton;
+  misclickBtn:     MenuButton;
   goRetryBtn:      MenuButton;
   goMenuBtn:       MenuButton;
 }
@@ -52,6 +53,15 @@ export function computeLayout(w: number, h: number, gridSize = 8): Layout {
   const exitBtnSize = restartSize;
   const exitBtnX    = MARGIN;
   const exitBtnY    = Math.floor(SCORE_BAR_H / 2 - exitBtnSize / 2);
+
+  // Misclick button: right of restart in score bar, 32×32 to match restart
+  const misclickSize = restartSize;
+  const misclickBtn: MenuButton = {
+    x:      restartX + restartSize + 10,
+    y:      restartY,
+    width:  misclickSize,
+    height: misclickSize,
+  };
 
   // Menu buttons: two stacked vertically, centred in the lower half of the screen
   const btnW        = Math.min(260, w - MARGIN * 4);
@@ -99,6 +109,7 @@ export function computeLayout(w: number, h: number, gridSize = 8): Layout {
     menuClassicBtn, menuPowerUpBtn,
     menuSize8Btn, menuSize10Btn,
     menuLogsBtn,
+    misclickBtn,
     goRetryBtn, goMenuBtn,
   };
 }

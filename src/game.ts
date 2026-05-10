@@ -264,6 +264,17 @@ export function processInput(
       clearInputBuffer(input);
       return;
     }
+
+    // Misclick button → tag last action as a misplay in the record
+    if (state.phase === Phase.PLAYING || state.phase === Phase.CLEARING) {
+      const { misclickBtn } = layout;
+      if (x >= misclickBtn.x && x <= misclickBtn.x + misclickBtn.width &&
+          y >= misclickBtn.y && y <= misclickBtn.y + misclickBtn.height) {
+        state.recorder?.event('misclick', {});
+        clearInputBuffer(input);
+        return;
+      }
+    }
   }
 
   // --- GAME_OVER: two explicit buttons ---

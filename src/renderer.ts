@@ -221,6 +221,38 @@ function drawEmptyCell(
 
 // ─── sub-renderers ───────────────────────────────────────────────────────────
 
+function drawMisclickButton(ctx: CanvasRenderingContext2D, layout: Layout): void {
+  const { misclickBtn } = layout;
+  const { x, y, width, height } = misclickBtn;
+  const cx = x + width  / 2;
+  const cy = y + height / 2;
+  const r  = Math.min(width, height) / 2;
+
+  ctx.save();
+
+  // Amber fill circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = '#b85c00';
+  ctx.fill();
+
+  // Bright amber ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r - 1, 0, Math.PI * 2);
+  ctx.strokeStyle = '#ff8c00';
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+
+  // "!" glyph
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font         = `bold ${Math.round(height * 0.55)}px system-ui, sans-serif`;
+  ctx.fillStyle    = '#ffffff';
+  ctx.fillText('!', cx, cy);
+
+  ctx.restore();
+}
+
 function drawRestartButton(ctx: CanvasRenderingContext2D, layout: Layout): void {
   const { restartX, restartY, restartSize } = layout;
   const cx = restartX + restartSize / 2;
@@ -612,12 +644,20 @@ function drawMenu(
   drawSizePill(ctx, layout.menuSize8Btn,  '8 × 8',   gridSize === 8);
   drawSizePill(ctx, layout.menuSize10Btn, '10 × 10', gridSize === 10);
 
-  // Logs link button
+  // Logs button — pill with visible border
   const { menuLogsBtn } = layout;
+  const lr = menuLogsBtn.height * 0.45;
+  roundRect(ctx, menuLogsBtn.x, menuLogsBtn.y, menuLogsBtn.width, menuLogsBtn.height, lr);
+  ctx.fillStyle = '#1a1a38';
+  ctx.fill();
+  roundRect(ctx, menuLogsBtn.x, menuLogsBtn.y, menuLogsBtn.width, menuLogsBtn.height, lr);
+  ctx.strokeStyle = '#5555a0';
+  ctx.lineWidth   = 1.5;
+  ctx.stroke();
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font         = `12px system-ui, sans-serif`;
-  ctx.fillStyle    = '#44447a';
+  ctx.font         = `bold 12px system-ui, sans-serif`;
+  ctx.fillStyle    = '#a0a0d8';
   ctx.fillText('Game Logs', menuLogsBtn.x + menuLogsBtn.width / 2, menuLogsBtn.y + menuLogsBtn.height / 2);
 }
 
@@ -646,6 +686,9 @@ export function renderGame(
     drawScoreBar(ctx, w, state.displayScore, state.best, layout);
     drawExitButton(ctx, layout);
     drawRestartButton(ctx, layout);
+    if (state.phase === Phase.PLAYING || state.phase === Phase.CLEARING) {
+      drawMisclickButton(ctx, layout);
+    }
     drawGrid(ctx, state.grid, layout);
     drawClearingOverlay(ctx, state, layout);
     drawTray(ctx, state.tray, state.drag, layout, w);
