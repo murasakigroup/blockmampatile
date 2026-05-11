@@ -6,6 +6,7 @@ import { InputBuffer, clearInputBuffer } from './input.js';
 import { Layout, MenuButton } from './layout.js';
 import { spawnPowerup, resolvePowerups } from './powerups.js';
 import { createRecorder } from './recorder.js';
+import { triggerBeaconSync } from './sync.js';
 
 export const CLEAR_DURATION = 0.3; // seconds
 
@@ -179,9 +180,10 @@ function afterClear(state: GameState): void {
 
   // Game over: no remaining piece fits anywhere
   if (!anyPieceFits(state.grid, state.tray)) {
-    state.phase = Phase.GAME_OVER;
-    state.recorder?.finish(state.score, state.best);
-    state.recorder = null;
+    state.phase     = Phase.GAME_OVER;
+    const gameId    = state.recorder?.finish(state.score, state.best) ?? null;
+    state.recorder  = null;
+    if (gameId) triggerBeaconSync(gameId);
   } else {
     state.phase = Phase.PLAYING;
   }

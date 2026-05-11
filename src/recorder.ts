@@ -58,7 +58,7 @@ export interface GameRecord {
 
 export interface Recorder {
   event(type: string, payload?: Record<string, unknown>): void;
-  finish(finalScore: number, finalBest: number): void;
+  finish(finalScore: number, finalBest: number): string | null;
   flush(): void;
 }
 
@@ -151,13 +151,14 @@ export function createRecorder(mode: string, gridSize: number): Recorder {
       record.events.push({ t: Math.round(performance.now() - startMs), type, ...payload });
     },
     finish(finalScore, finalBest) {
-      if (saved) return;
+      if (saved) return null;
       saved = true;
       record.ended_at    = new Date().toISOString();
       record.final_score = finalScore;
       record.final_best  = finalBest;
       rec.event('game_over', { final_score: finalScore, reason: 'no_piece_fits' });
       persistGame(record);
+      return record.game_id;
     },
     flush() {
       if (saved || record.events.length === 0) return;
