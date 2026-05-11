@@ -5,7 +5,7 @@ import { processInput, update } from './game.js';
 import { renderGame } from './renderer.js';
 import { computeLayout } from './layout.js';
 import { loadAllGames, deleteGame, gameToYAML, exportAllJSON } from './recorder.js';
-import { initSyncParams, syncPendingGames } from './sync.js';
+import { initSyncParams, syncPendingGames, syncOneGame, loadSyncedIds, isSyncConfigured } from './sync.js';
 
 function sizeCanvas(canvas: HTMLCanvasElement): void {
   const dpr = window.devicePixelRatio || 1;
@@ -18,6 +18,54 @@ function sizeCanvas(canvas: HTMLCanvasElement): void {
 }
 
 // ─── logs modal ──────────────────────────────────────────────────────────────
+
+function buildSyncIndicator(_gameId: string, synced: boolean): HTMLButtonElement {
+  const btn = document.createElement('button');
+  Object.assign(btn.style, {
+    background:   'none',
+    border:       'none',
+    cursor:       synced ? 'default' : 'pointer',
+    fontSize:     '15px',
+    padding:      '0 2px',
+    lineHeight:   '1',
+    flexShrink:   '0',
+    opacity:      synced ? '1' : '0.7',
+  });
+  if (synced) {
+    btn.textContent = '✓';
+    btn.title       = 'Synced to laptop';
+    btn.style.color = '#4caf50';
+  } else {
+    btn.textContent = '⇡';
+    btn.title       = 'Not synced — click to sync';
+    btn.style.color = '#7070b0';
+  }
+  return btn;
+}
+
+function setSyncState(btn: HTMLButtonElement, state: 'syncing' | 'synced' | 'failed'): void {
+  if (state === 'syncing') {
+    btn.textContent  = '↻';
+    btn.title        = 'Syncing…';
+    btn.style.color  = '#7070b0';
+    btn.style.cursor = 'default';
+    btn.disabled     = true;
+  } else if (state === 'synced') {
+    btn.textContent  = '✓';
+    btn.title        = 'Synced to laptop';
+    btn.style.color  = '#4caf50';
+    btn.style.cursor = 'default';
+    btn.style.opacity = '1';
+    btn.disabled     = true;
+  } else {
+    btn.textContent  = '⚠';
+    btn.title        = 'Sync failed — click to retry';
+    btn.style.color  = '#c07030';
+    btn.style.cursor = 'pointer';
+    btn.style.opacity = '1';
+    btn.disabled     = false;
+  }
+}
 
 function buildLogsModal(state: GameState): HTMLElement {
   const overlay = document.createElement('div');
@@ -33,7 +81,14 @@ function buildLogsModal(state: GameState): HTMLElement {
     overflowY:       'hidden',
   });
 
-  // Header
+  const syncEnabled = isSyncConfigured();
+  const games       = loadAllGames().reverse();
+  const syncedIds   = loadSyncedIds();
+
+  // Map of gameId → sync indicator button, so Sync All can update them
+  const indicators  = new Map<string, HTMLButtonElement>();
+
+  // ── Header ────────────────────────────────────────────────────────────────
   const header = document.createElement('div');
   Object.assign(header.style, {
     display:        'flex',
@@ -42,17 +97,45 @@ function buildLogsModal(state: GameState): HTMLElement {
     padding:        '14px 20px',
     borderBottom:   '1px solid #1e1e3a',
     flexShrink:     '0',
+    gap:            '10px',
   });
 
   const title = document.createElement('span');
   title.textContent = 'Game Logs';
-  Object.assign(title.style, { fontWeight: 'bold', fontSize: '17px' });
+  Object.assign(title.style, { fontWeight: 'bold', fontSize: '17px', marginRight: 'auto' });
 
   const headerRight = document.createElement('div');
   Object.assign(headerRight.style, { display: 'flex', gap: '10px', alignItems: 'center' });
 
+  // Sync All button — only shown when sync is configured
+  if (syncEnabled) {
+    const pendingCount = games.filter(g => !syncedIds.has(g.game_id)).length;
+    const syncAllBtn   = document.createElement('button');
+    styleSecondaryBtn(syncAllBtn);
+    const updateSyncAllLabel = () => {
+      const n = [...indicators.entries()].filter(([, btn]) => btn.textContent === '⇡' || btn.textContent === '⚠').length;
+      syncAllBtn.textContent = n > 0 ? `⇡ Sync ${n}` : '✓ All synced';
+      syncAllBtn.disabled    = n === 0;
+    };
+    updateSyncAllLabel();
+    if (pendingCount === 0) syncAllBtn.disabled = true;
+
+    syncAllBtn.addEventListener('click', async () => {
+      syncAllBtn.disabled = true;
+      for (const [gameId, indicator] of indicators) {
+        if (indicator.textContent === '⇡' || indicator.textContent === '⚠') {
+          setSyncState(indicator, 'syncing');
+          const ok = await syncOneGame(gameId);
+          setSyncState(indicator, ok ? 'synced' : 'failed');
+          updateSyncAllLabel();
+        }
+      }
+    });
+    headerRight.append(syncAllBtn);
+  }
+
   const exportBtn = document.createElement('button');
-  exportBtn.textContent = 'Export all JSON';
+  exportBtn.textContent = 'Export JSON';
   styleSecondaryBtn(exportBtn);
   exportBtn.addEventListener('click', () => {
     const blob = new Blob([exportAllJSON()], { type: 'application/json' });
@@ -66,31 +149,17 @@ function buildLogsModal(state: GameState): HTMLElement {
   const closeBtn = document.createElement('button');
   closeBtn.textContent = '✕';
   Object.assign(closeBtn.style, {
-    background:  'none',
-    border:      'none',
-    color:       '#8080b0',
-    fontSize:    '20px',
-    cursor:      'pointer',
-    padding:     '4px 8px',
-    lineHeight:  '1',
+    background: 'none', border: 'none', color: '#8080b0',
+    fontSize: '20px', cursor: 'pointer', padding: '4px 8px', lineHeight: '1',
   });
-  closeBtn.addEventListener('click', () => {
-    state.showLogs = false;
-    overlay.remove();
-  });
+  closeBtn.addEventListener('click', () => { state.showLogs = false; overlay.remove(); });
 
   headerRight.append(exportBtn, closeBtn);
   header.append(title, headerRight);
 
-  // Scrollable list
+  // ── Scrollable list ────────────────────────────────────────────────────────
   const list = document.createElement('div');
-  Object.assign(list.style, {
-    overflowY:  'auto',
-    flex:       '1',
-    padding:    '12px 20px',
-  });
-
-  const games = loadAllGames().reverse(); // newest first
+  Object.assign(list.style, { overflowY: 'auto', flex: '1', padding: '12px 20px' });
 
   if (games.length === 0) {
     const empty = document.createElement('p');
@@ -101,13 +170,9 @@ function buildLogsModal(state: GameState): HTMLElement {
     for (const game of games) {
       const row = document.createElement('div');
       Object.assign(row.style, {
-        display:      'flex',
-        alignItems:   'center',
-        gap:          '10px',
-        padding:      '10px 0',
-        borderBottom: '1px solid #12122a',
-        fontSize:     '13px',
-        flexWrap:     'wrap',
+        display: 'flex', alignItems: 'center', gap: '8px',
+        padding: '10px 0', borderBottom: '1px solid #12122a',
+        fontSize: '13px', flexWrap: 'wrap',
       });
 
       const info = document.createElement('span');
@@ -127,12 +192,26 @@ function buildLogsModal(state: GameState): HTMLElement {
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Delete';
       styleSecondaryBtn(delBtn, true);
-      delBtn.addEventListener('click', () => {
-        deleteGame(game.game_id);
-        row.remove();
-      });
+      delBtn.addEventListener('click', () => { deleteGame(game.game_id); row.remove(); });
 
       row.append(info, copyBtn, delBtn);
+
+      if (syncEnabled) {
+        const synced    = syncedIds.has(game.game_id);
+        const indicator = buildSyncIndicator(game.game_id, synced);
+        indicators.set(game.game_id, indicator);
+
+        if (!synced) {
+          indicator.addEventListener('click', async () => {
+            setSyncState(indicator, 'syncing');
+            const ok = await syncOneGame(game.game_id);
+            setSyncState(indicator, ok ? 'synced' : 'failed');
+          });
+        }
+
+        row.append(indicator);
+      }
+
       list.append(row);
     }
   }
