@@ -5,7 +5,7 @@ import { processInput, update } from './game.js';
 import { renderGame } from './renderer.js';
 import { computeLayout } from './layout.js';
 import { loadAllGames, deleteGame, gameToYAML, exportAllJSON } from './recorder.js';
-import { initSyncParams, syncPendingGames, syncOneGame, loadSyncedIds, isSyncConfigured } from './sync.js';
+import { initSyncParams, syncPendingGames, syncOneGame, loadSyncedIds, isSyncConfigured, clearSyncedIds } from './sync.js';
 
 function sizeCanvas(canvas: HTMLCanvasElement): void {
   const dpr = window.devicePixelRatio || 1;
@@ -131,7 +131,25 @@ function buildLogsModal(state: GameState): HTMLElement {
         }
       }
     });
-    headerRight.append(syncAllBtn);
+
+    const resetBtn = document.createElement('button');
+    resetBtn.textContent = 'Reset sync';
+    resetBtn.title = 'Mark all games as unsynced so they can be re-sent';
+    styleSecondaryBtn(resetBtn, true);
+    resetBtn.addEventListener('click', () => {
+      clearSyncedIds();
+      for (const [, indicator] of indicators) {
+        indicator.textContent  = '⇡';
+        indicator.title        = 'Not synced — click to sync';
+        indicator.style.color  = '#7070b0';
+        indicator.style.cursor = 'pointer';
+        indicator.style.opacity = '0.7';
+        indicator.disabled     = false;
+      }
+      updateSyncAllLabel();
+    });
+
+    headerRight.append(syncAllBtn, resetBtn);
   }
 
   const exportBtn = document.createElement('button');

@@ -13,6 +13,10 @@ export function isSyncConfigured(): boolean {
   return !!(localStorage.getItem(SYNC_URL_KEY) && localStorage.getItem(TOKEN_KEY));
 }
 
+export function clearSyncedIds(): void {
+  localStorage.removeItem(SYNCED_KEY);
+}
+
 export async function syncOneGame(gameId: string): Promise<boolean> {
   const url   = localStorage.getItem(SYNC_URL_KEY);
   const token = localStorage.getItem(TOKEN_KEY);
