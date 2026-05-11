@@ -4,9 +4,36 @@ const SYNCED_KEY    = 'bm-synced-ids';
 const SYNC_URL_KEY  = 'bm-sync-url';
 const TOKEN_KEY     = 'bm-sync-token';
 
-function loadSyncedIds(): Set<string> {
+export function loadSyncedIds(): Set<string> {
   try { return new Set(JSON.parse(localStorage.getItem(SYNCED_KEY) ?? '[]')); }
   catch { return new Set(); }
+}
+
+export function isSyncConfigured(): boolean {
+  return !!(localStorage.getItem(SYNC_URL_KEY) && localStorage.getItem(TOKEN_KEY));
+}
+
+export async function syncOneGame(gameId: string): Promise<boolean> {
+  const url   = localStorage.getItem(SYNC_URL_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!url || !token) return false;
+  const game  = loadGame(gameId);
+  if (!game) return false;
+  try {
+    const res = await fetch(`${url}/sync`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'text/yaml',
+        'Authorization': `Bearer ${token}`,
+        'X-Game-Id':     gameId,
+      },
+      body: gameToYAML(game),
+    });
+    if (res.ok) { markSynced(gameId); return true; }
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 function markSynced(id: string): void {
