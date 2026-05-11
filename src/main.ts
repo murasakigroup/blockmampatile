@@ -5,6 +5,7 @@ import { processInput, update } from './game.js';
 import { renderGame } from './renderer.js';
 import { computeLayout } from './layout.js';
 import { loadAllGames, deleteGame, gameToYAML, exportAllJSON } from './recorder.js';
+import { initSyncParams, syncPendingGames } from './sync.js';
 
 function sizeCanvas(canvas: HTMLCanvasElement): void {
   const dpr = window.devicePixelRatio || 1;
@@ -164,6 +165,9 @@ function main(): void {
 
   sizeCanvas(canvas);
 
+  initSyncParams();
+  syncPendingGames().catch(() => {});
+
   const state = createInitialState();
   const input = createInputBuffer();
 
@@ -171,10 +175,11 @@ function main(): void {
 
   window.addEventListener('resize', () => sizeCanvas(canvas));
 
-  // Flush in-progress game record when the user switches away
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       state.recorder?.flush();
+    } else {
+      syncPendingGames().catch(() => {});
     }
   });
 
