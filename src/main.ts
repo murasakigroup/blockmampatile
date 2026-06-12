@@ -398,6 +398,13 @@ function buildCoachModal(result: CoachResult, gridSize: number): HTMLElement {
     const leftBoard  = makeBoard('What you played', result.gridBeforeFatal,
       { cells: fatalCells, colour: '#c0152f' });
 
+    // Under left board: name the fatal placement (mirrors the right board's caption)
+    const fa = result.fatalActual;
+    const faText = document.createElement('span');
+    faText.textContent = `${fa.piece} at (${fa.anchor[0]},${fa.anchor[1]})`;
+    Object.assign(faText.style, { fontSize: '11px', color: '#9090c0', textAlign: 'center' });
+    leftBoard.append(faText);
+
     // Right: what survives
     const witnessCells = stepCells(result.witness[0], gridSize);
     const rightWrap    = makeBoard('What survives', result.gridBeforeFatal,
