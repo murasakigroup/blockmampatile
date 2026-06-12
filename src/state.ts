@@ -34,6 +34,7 @@ export interface GameState {
   pendingSpawnLines: number;   // line count for powerup spawn after clear animation (0 = none)
   recorder:          Recorder | null;
   showLogs:          boolean;
+  lastGameId:        string | null;
 }
 
 export function bestKey(mode: GameMode, size: number): string {
@@ -77,6 +78,7 @@ export function createInitialState(): GameState {
     pendingSpawnLines: 0,
     recorder:          null,
     showLogs:          false,
+    lastGameId:        null,
   };
 }
 

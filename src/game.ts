@@ -183,6 +183,7 @@ function afterClear(state: GameState): void {
     state.phase     = Phase.GAME_OVER;
     const gameId    = state.recorder?.finish(state.score, state.best) ?? null;
     state.recorder  = null;
+    state.lastGameId = gameId;
     if (gameId) triggerBeaconSync(gameId);
   } else {
     state.phase = Phase.PLAYING;
